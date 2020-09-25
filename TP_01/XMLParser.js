@@ -64,6 +64,13 @@ class XMLParser {
             if((err=this.parseTextures(childNodes[index]))!=null)
                 return err;
         }
+
+        if((index=childrenName.indexOf("materials"))==-1)
+            return "tag <materials> missing";
+        else {
+            if((err=this.parseMaterials(childNodes[index]))!=null)
+                return err;
+        }
     }
     parseInitials(initialsNode) {
         var children = initialsNode.childNodes;
@@ -472,10 +479,137 @@ class XMLParser {
             return "0 lights defined (minimum 1)";
         else if(numLights>8)
             return "Exceeded lights limit (8 max)";
-        else
-            return null;
+        
+        console.log("Parsed lights");
+        return null;
     }
     parseTextures(texturesNode) {
+        var children = texturesNode.childNodes;
+        var childrenName = [];
+        this.textures=[];
+        var numTextures=0;
+
+        for(var i=0;i<children.length;i++) {
+            if(children[i].nodeName != "texture"){
+                console.log("Wrongly named node");
+                continue;
+            }
+            var textureID = this.XMLreader.getString(children[i],'id');
+            if(textureID==null)
+                return "No texture ID defined"
+            if(childrenName.includes(textureID)) {
+                return "Texture ID' i's not unique";
+            }
+            childrenName.push(textureID);
+            this.textures[i]=this.XMLreader.getString(children[i],'path');
+            numTextures++;
+        }
+
+        if(numTextures==0)
+            console.log("No textures defined");
         
+        console.log("Parsed textures");
+        return null;
+
+    }
+    parseMaterials(materialsNode) {
+        var children = materialsNode.childNodes;
+        var childrenName = [];
+        var grandChildrenNodes=[];
+        var grandChildrenNodeNames=[];
+
+        this.materials=[];
+        var numMaterials=0;
+        for (var i=0; i<children.length; i++){
+
+            var materialID = this.XMLreader.getString(children[i], 'id');
+            if(materialID==null)
+                return "No material ID defined";
+            
+            if(this.childrenName.includes(materialID))
+                return "Material ID's not unique";
+
+            childrenName.push(materialID);
+
+            grandChildrenNodes = children[i].childNodes;
+            for(var j=0;j<grandChildrenNodes.length;j++) {
+                grandChildrenNodeNames.push(grandChildrenNodes[j].nodeName);
+            }
+
+            var shininessIndex = grandChildrenNodes.indexOf("shininess");
+            var emissiveIndex = grandChildrenNodes.indexOf("emissive");
+            var ambientIndex = grandChildrenNodes.indexOf("ambient");
+            var diffuseIndex = grandChildrenNodes.indexOf("diffuse");
+            var specularIndex = grandChildrenNodes.indexOf("specular");
+
+            var referenceShininess = 0.0;
+            var referenceEmissive = [0.0,0.0,0.0,1.0];
+            var referenceAmbient = [1.0,0.0,0.0,1.0];
+            var referenceDiffuse = [0.6,0.0,0.0,1.0];
+            var referenceSpecular = [0.6,0.0,0.0,1.0];
+
+            if(shininessIndex == -1 || emissiveIndex == -1 || ambientIndex ==-1 || diffuseIndex ==-1 || specularIndex==-1)
+                console.log("Missing nodes, assuming default values for material");
+            else {
+                var shininess = this.XMLreader.getFloat(grandChildrenNodes[shininessIndex], 'value');
+                var r_emi = this.XMLreader.getFloat(grandChildrenNodes[emissiveIndex], 'r');
+                var g_emi = this.XMLreader.getFloat(grandChildrenNodes[emissiveIndex], 'g');
+                var b_emi = this.XMLreader.getFloat(grandChildrenNodes[emissiveIndex], 'b');
+                var a_emi = this.XMLreader.getFloat(grandChildrenNodes[emissiveIndex], 'a');
+                var r_amb = this.XMLreader.getFloat(grandChildrenNodes[ambientIndex], 'r');
+                var g_amb = this.XMLreader.getFloat(grandChildrenNodes[ambientIndex], 'g');
+                var b_amb = this.XMLreader.getFloat(grandChildrenNodes[ambientIndex], 'b');
+                var a_amb = this.XMLreader.getFloat(grandChildrenNodes[ambientIndex], 'a');
+                var r_dif = this.XMLreader.getFloat(grandChildrenNodes[diffuseIndex], 'r');
+                var g_dif = this.XMLreader.getFloat(grandChildrenNodes[diffuseIndex], 'g');
+                var b_dif = this.XMLreader.getFloat(grandChildrenNodes[diffuseIndex], 'b');
+                var a_dif = this.XMLreader.getFloat(grandChildrenNodes[diffuseIndex], 'a');
+                var r_spe = this.XMLreader.getFloat(grandChildrenNodes[specularIndex], 'r');
+                var g_spe = this.XMLreader.getFloat(grandChildrenNodes[specularIndex], 'g');
+                var b_spe = this.XMLreader.getFloat(grandChildrenNodes[specularIndex], 'b');
+                var a_spe = this.XMLreader.getFloat(grandChildrenNodes[specularIndex], 'a');
+
+                if(shininess!=null && r_emi!=null && g_emi!=null && b_emi!=null && a_emi!=null && r_amb!=null && g_amb!=null && b_amb!=null && a_amb!=null && 
+                    r_dif!=null && g_dif!=null && b_dif!=null && a_dif!=null&& r_spe!=null && g_spe!=null && b_spe!=null && a_spe!=null) {
+                    if(isNan(shininess)||isNaN(r_emi)||isNaN(g_emi)||isNaN(b_emi)||isNaN(a_emi)||isNaN(r_amb)||isNaN(g_amb)||isNaN(b_amb)||isNaN(a_amb)
+                    ||isNaN(r_dif)||isNaN(g_dif)||isNaN(b_dif)||isNaN(a_dif)||isNaN(r_spe)||isNaN(g_spe)||isNaN(b_spe) || isNaN(a_spe))
+                        console.log("Non numeric values, assuming default values");
+                    else if (shininess<0 || r_emi>1 || g_emi>1 || b_emi>1 || a_emi>1 || r_emi<0 || g_emi<0 || b_emi<0 || a_emi<0 || r_amb>1 || g_amb>1 || b_amb>1 || a_amb>1 || r_amb<0 
+                        || g_amb<0 || b_amb<0 || a_amb<0 || r_amb>1 || g_amb>1 || b_amb>1 || a_amb>1 || r_amb<0 || g_amb<0 || b_amb<0 || a_amb<0 || r_spe>1 || g_spe>1 || 
+                        b_spe>1 || a_spe>1 || r_spe<0 || g_spe<0 || b_spe<0 || a_spe<0 || r_spe>1 || g_spe>1 || b_spe>1 || a_spe>1)
+                        console.log("Values must not be negative, assuming default");
+                    else{
+                        referenceShininess = shininess;
+                        referenceEmissive[0]=r_emi;
+                        referenceEmissive[1]=g_emi;
+                        referenceEmissive[2]=b_emi;
+                        referenceEmissive[3]=a_emi;
+                        referenceAmbient[0]=r_amb;
+                        referenceAmbient[1]=g_amb;
+                        referenceAmbient[2]=b_amb;
+                        referenceAmbient[3]=a_amb;
+                        referenceDiffuse[0]=r_dif;
+                        referenceDiffuse[1]=g_dif;
+                        referenceDiffuse[2]=b_dif;
+                        referenceDiffuse[3]=a_dif;
+                        referenceSpecular[0]=r_spe;
+                        referenceSpecular[1]=g_spe;
+                        referenceSpecular[2]=b_spe;
+                        referenceSpecular[3]=a_spe;
+    
+                    }
+
+                }
+
+            }
+            
+            this.materials[i]=[referenceShininess,referenceAmbient,referenceDiffuse,referenceSpecular,referenceEmissive];
+            numMaterials++;
+        }
+        if(numMaterials==0)
+            return "0 materials defined (minimum 1)";
+        
+        console.log("Parsed materials");
+        return null;
     }
 }
