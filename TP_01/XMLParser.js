@@ -71,6 +71,13 @@ class XMLParser {
             if((err=this.parseMaterials(childNodes[index]))!=null)
                 return err;
         }
+
+        if((index=childrenName.indexOf("nodes"))==-1)
+            return "tag <nodes> missing";
+        else {
+            if((err=this.parseObjetcs(childNodes[index]))!=null)
+                return err;
+        }
     }
     parseInitials(initialsNode) {
         var children = initialsNode.childNodes;
@@ -102,23 +109,20 @@ class XMLParser {
         this.rootNode ="";
         var rootIndex = childrenName.indexOf("root");
         if(rootIndex==-1){
-            console.error("Root id is undefined");
-            return 1;
+            return "Root id is undefined";
         }
         else {
             var rootID = this.XMLreader.getString(children[rootIndex], 'id');
 
             if(rootID!=null) {
                 if(!isNaN(rootID)){
-                    console.error("Root id is undefined");
-                    return 1;
+                    return "Root id is undefined";
                 }
                 else
                     this.rootNode=rootID;
             }
             else{
-                console.error("Root id is undefined");
-                return 1;
+                return "Root id is undefined";
             }
         }
 
@@ -406,11 +410,11 @@ class XMLParser {
                 grandChildrenNodeNames.push(grandChildrenNodes[j].nodeName);
             }
 
-            var enableIndex = grandChildrenNodes.indexOf("enable");
-            var positionIndex = grandChildrenNodes.indexOf("position");
-            var ambientIndex = grandChildrenNodes.indexOf("ambient");
-            var diffuseIndex = grandChildrenNodes.indexOf("diffuse");
-            var specularIndex = grandChildrenNodes.indexOf("specular");
+            var enableIndex = grandChildrenNodeNames.indexOf("enable");
+            var positionIndex = grandChildrenNodeNames.indexOf("position");
+            var ambientIndex = grandChildrenNodeNames.indexOf("ambient");
+            var diffuseIndex = grandChildrenNodeNames.indexOf("diffuse");
+            var specularIndex = grandChildrenNodeNames.indexOf("specular");
 
             var referenceEnable = true;
             var referencePosition = [10,12,9.5,1.0];
@@ -501,7 +505,7 @@ class XMLParser {
                 return "Texture ID' i's not unique";
             }
             childrenName.push(textureID);
-            this.textures[i]=this.XMLreader.getString(children[i],'path');
+            this.textures[textureID]=this.XMLreader.getString(children[i],'path');
             numTextures++;
         }
 
@@ -536,11 +540,11 @@ class XMLParser {
                 grandChildrenNodeNames.push(grandChildrenNodes[j].nodeName);
             }
 
-            var shininessIndex = grandChildrenNodes.indexOf("shininess");
-            var emissiveIndex = grandChildrenNodes.indexOf("emissive");
-            var ambientIndex = grandChildrenNodes.indexOf("ambient");
-            var diffuseIndex = grandChildrenNodes.indexOf("diffuse");
-            var specularIndex = grandChildrenNodes.indexOf("specular");
+            var shininessIndex = grandChildrenNodeNames.indexOf("shininess");
+            var emissiveIndex = grandChildrenNodeNames.indexOf("emissive");
+            var ambientIndex = grandChildrenNodeNames.indexOf("ambient");
+            var diffuseIndex = grandChildrenNodeNames.indexOf("diffuse");
+            var specularIndex = grandChildrenNodeNames.indexOf("specular");
 
             var referenceShininess = 0.0;
             var referenceEmissive = [0.0,0.0,0.0,1.0];
@@ -603,7 +607,7 @@ class XMLParser {
 
             }
             
-            this.materials[i]=[referenceShininess,referenceAmbient,referenceDiffuse,referenceSpecular,referenceEmissive];
+            this.materials[materialID]=[referenceShininess,referenceAmbient,referenceDiffuse,referenceSpecular,referenceEmissive];
             numMaterials++;
         }
         if(numMaterials==0)
@@ -611,5 +615,211 @@ class XMLParser {
         
         console.log("Parsed materials");
         return null;
+    }
+    parseObjetcs(nodeObjects) {
+        var children = nodeObjects.childNodes;
+        var childrenName = [];
+        var grandChildrenNodes=[];
+        var grandChildrenNodeNames=[];
+
+        this.nodes=[];
+        var rootNodeID;
+
+        for(var i=0;i<children.length;i++) {
+            if(children[i].nodeName != "node"){
+                console.log("Wrongly named node");
+                continue;
+            }
+            var nodeID = this.XMLreader.getString(children[i],'id');
+            if(nodeID==null)
+                return "No node ID defined";
+
+            if(nodeID==this.rootNode){
+                if(rootNodeID!=null)
+                    return "Non unique root ID";
+                rootNodeID=nodeID;
+            }
+            else{
+                if(childrenName.includes(nodeID)) {
+                    return "Node ID's not unique";
+                }
+            }
+            
+            childrenName.push(nodeID);
+            grandChildrenNodes=children[i].childNodes;
+            for(var j=0;j<grandChildrenNodes.length;j++) {
+                grandChildrenNodeNames.push(grandChildrenNodes[j].nodeName);
+            }
+
+            var materialIndex = grandChildrenNodeNames.indexOf("material");
+            var textureIndex = grandChildrenNodeNames.indexOf("texture");
+            var transformationsIndex = grandChildrenNodeNames.indexOf("transformations");
+            var descendantsIndex = grandChildrenNodeNames.indexOf("descendants");
+
+            if(materialIndex==-1 || textureIndex==-1)
+                return "No material/texture declared";
+
+            var materialID = this.XMLreader.getString(grandChildrenNodes[materialIndex],'id');
+            var textureID = this.XMLreader.getString(grandChildrenNodes[textureIndex],'id');
+
+            if(materialID==null || textureID==null)
+                return "Undeclared material/texture ID";
+            
+            if((this.materials[materialID]==null && materialID=="null") || (this.textures[textureID]==null && materialID=="null"))
+                return "No matching material/texture";
+            
+            var textureChildren = grandChildrenNodes[textureIndex].childNodes;
+            var textureChildrenNames = [];
+            for(var j=0;j<textureChildren.length;j++) {
+                textureChildrenNames.push(textureChildren[j].nodeName);
+            }
+            var amplificationIndex = textureChildrenNames.indexOf("amplification");
+            if(amplificationIndex==null)
+                return "No texture amplification";
+            
+            var afs = this.XMLreader.getFloat(textureChildren[amplificationIndex],'afs');
+            var aft = this.XMLreader.getFloat(textureChildren[amplificationIndex],'aft');
+
+            if(isNaN(afs)||isNaN(aft))
+                return "Non numerical values for afs/aft";
+            else if(afs<0.0 || aft<0.0)
+                return "Negative values for aft/afs";
+            
+            var transformations = [];
+
+            var transformationsNode = grandChildrenNodes[transformationsIndex].childNodes;
+            for(var j=0;j<transformationsNode;j++) {
+                if(transformationsNode[j].nodeName=="translation") {
+                    var x = this.XMLreader.getFloat(transformationsNode[j],'x');
+                    var y = this.XMLreader.getFloat(transformationsNode[j],'y');
+                    var z = this.XMLreader.getFloat(transformationsNode[j],'z');
+
+                    if(x==null||y==null||z==null)
+                        return "No values for translation";
+                    else if(isNaN(x)|isNaN(y)||isNaN(z))
+                        return "Non numeric values for translation";
+                    transformations[j]=[transformationsNode[j].nodeName,x,y,z];
+                }
+                else if(transformationsNode[j].nodeName=="rotation") {
+                    var axis = this.XMLreader.getFloat(transformationsNode[j],'axis');
+                    var angle = this.XMLreader.getFloat(transformationsNode[j],'angle');
+
+                    if(axis==null||angle==null)
+                        return "No values for rotation";
+                    else if(isNaN(angle)|!isNaN(axis))
+                        return "Non numeric value for rotation";
+                    else if(axis=="yy"||axis=="xx"||axis=="zz") 
+                        transformations[j]=[transformationsNode[j].nodeName,axis,angle];
+                    else
+                        return "Non aplicable axis value";
+                }
+                if(transformationsNode[j].nodeName=="scale") {
+                    var sx = this.XMLreader.getFloat(transformationsNode[j],'sx');
+                    var sy = this.XMLreader.getFloat(transformationsNode[j],'sy');
+                    var sz = this.XMLreader.getFloat(transformationsNode[j],'sz');
+
+                    if(x==null||y==null||z==null)
+                        return "No values for scaling";
+                    else if(isNaN(x)|isNaN(y)||isNaN(z))
+                        return "Non numeric values for scaling";
+                    transformations[j]=[transformationsNode[j].nodeName,sx,sy,sz];
+                }
+            }
+
+            var descendants = [];
+            var descendantsNode = grandChildrenNodes[descendantsIndex],childNodes;
+            var childNum=0;
+            for(var j=0;j<descendantsNode;j++) {
+                if(descendantsNode[j].nodeName=="noderef"){
+                    var descID = this.XMLreader.getString(descendantsNode[j],'id');
+
+                    if(descID==null)
+                        return "Undefined ID for descendant";
+                    else if(descID==nodeID)
+                        return "Node can't be it's own descendant";
+                    
+                    descendants[j]=descID;
+                }
+                else if(descendantsNode[j].nodeName=="leaf"){
+                    var type = this.XMLreader.getString(descendantsNode[j],'type',['triangle', 'rectangle', 'cylinder', 'sphere', 'torus']);
+
+                    if(type=="rectangle"){
+                        var x1=this.XMLreader.getString(descendantsNode[j],'x1');
+                        var y1=this.XMLreader.getString(descendantsNode[j],'y1');
+                        var x2=this.XMLreader.getString(descendantsNode[j],'x2');
+                        var y2=this.XMLreader.getString(descendantsNode[j],'y2');
+
+                        if(x1==null||y1==null||x2==null||y2==null)
+                            return "Undefined values for rectangle";
+                        else if(isNaN(x1)||isNaN(y1)|isNaN(x2)||isNaN(y2))
+                            return "Non numeric values for rectangle";
+                        
+                        descendants[j]=[type,x1,y1,x2,y2];
+                    }
+                    else  if(type=="triangle"){
+                        var x1=this.XMLreader.getString(descendantsNode[j],'x1');
+                        var y1=this.XMLreader.getString(descendantsNode[j],'y1');
+                        var x2=this.XMLreader.getString(descendantsNode[j],'x2');
+                        var y2=this.XMLreader.getString(descendantsNode[j],'y2');
+                        var x3=this.XMLreader.getString(descendantsNode[j],'x3');
+                        var y3=this.XMLreader.getString(descendantsNode[j],'y3');
+                        var z3=this.XMLreader.getString(descendantsNode[j],'z3');
+
+                        if(x1==null||y1==null||x2==null||y2==null||x3==null||y3==null||z3==null)
+                            return "Undefined values for triangle";
+                        else if(isNaN(x1)||isNaN(y1)|isNaN(x2)||isNaN(y2)||isNaN(x3)||isNaN(y3)||isNaN(z3))
+                            return "Non numeric values for triangle";
+                        
+                        descendants[j]=[type,x1,y1,x2,y2,x3,y3,z3];
+                    }
+                    else  if(type=="cylinder"){
+                        var height=this.XMLreader.getString(descendantsNode[j],'height');
+                        var topRadius=this.XMLreader.getString(descendantsNode[j],'topRadius');
+                        var bottomRadius=this.XMLreader.getString(descendantsNode[j],'bottomRadius');
+                        var stacks=this.XMLreader.getString(descendantsNode[j],'stacks');
+                        var slices=this.XMLreader.getString(descendantsNode[j],'slices');
+
+                        if(height==null||topRadius==null||bottomRadius==null||stacks==null||slices==null)
+                            return "Undefined values for cylinder";
+                        else if(isNaN(height)||isNaN(topRadius)|isNaN(bottomRadius)||isNaN(stacks)||isNaN(slices))
+                            return "Non numeric values for cylinder";
+                        
+                        descendants[j]=[type,height,topRadius,bottomRadius,stacks,slices];
+                    }
+                    else  if(type=="sphere"){
+                        var radius=this.XMLreader.getString(descendantsNode[j],'radius');
+                        var stacks=this.XMLreader.getString(descendantsNode[j],'stacks');
+                        var slices=this.XMLreader.getString(descendantsNode[j],'slices');
+
+                        if(radius==null||stacks==null||slices==null)
+                            return "Undefined values for sphere";
+                        else if(isNaN(radius)||isNaN(stacks)||isNaN(slices))
+                            return "Non numeric values for sphere";
+                        
+                        descendants[j]=[type,radius,stacks,slices];
+                    }
+                    else  if(type=="torus"){
+                        var inner=this.XMLreader.getString(descendantsNode[j],'inner');
+                        var outer=this.XMLreader.getString(descendantsNode[j],'outer');
+                        var loops=this.XMLreader.getString(descendantsNode[j],'loops');
+                        var slices=this.XMLreader.getString(descendantsNode[j],'slices');
+
+                        if(inner==null||outer==null||loops==null||slices==null)
+                            return "Undefined values for torus";
+                        else if(isNaN(inner)||isNaN(outer)|isNaN(loops)||isNaN(slices))
+                            return "Non numeric values for torus";
+                        
+                        descendants[j]=[type,inner,outer,slices,loops];
+                    }
+                }
+                childNum++;
+            }
+            if(childNum==0)
+                return "0 descendants defined (1 min)";
+
+
+        }
+
+
     }
 }
