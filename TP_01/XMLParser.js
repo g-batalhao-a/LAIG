@@ -763,14 +763,13 @@ class XMLParser {
                         var y2=this.XMLreader.getString(descendantsNode[j],'y2');
                         var x3=this.XMLreader.getString(descendantsNode[j],'x3');
                         var y3=this.XMLreader.getString(descendantsNode[j],'y3');
-                        var z3=this.XMLreader.getString(descendantsNode[j],'z3');
 
-                        if(x1==null||y1==null||x2==null||y2==null||x3==null||y3==null||z3==null)
+                        if(x1==null||y1==null||x2==null||y2==null||x3==null||y3==null)
                             return "Undefined values for triangle";
-                        else if(isNaN(x1)||isNaN(y1)|isNaN(x2)||isNaN(y2)||isNaN(x3)||isNaN(y3)||isNaN(z3))
+                        else if(isNaN(x1)||isNaN(y1)|isNaN(x2)||isNaN(y2)||isNaN(x3)||isNaN(y3))
                             return "Non numeric values for triangle";
                         
-                        descendants[j]=[type,x1,y1,x2,y2,x3,y3,z3];
+                        descendants[j]=[type,x1,y1,x2,y2,x3,y3];
                     }
                     else  if(type=="cylinder"){
                         var height=this.XMLreader.getString(descendantsNode[j],'height');
