@@ -1,0 +1,114 @@
+<lsf>
+    <initials>
+        <reference length="1" />
+        <root id="Root" />
+    </initials>
+
+    <views default="Main View">
+        <perspective id="Main View" near="0.1" far="300" angle="10">
+            <from x="60" y="40" z="60" />
+            <to x="0" y="0" z="0" />
+        </perspective>
+    </views>
+
+    <illumination>
+        <ambient r="0.3" g="0.3" b="0.3" a="0.1" />
+        <background r="0.1" g="0.1" b="0.3" a="1.0" />
+    </illumination>
+
+
+    <lights>
+        <light id="Ceiling Light">
+            <enable value="1" />
+            <position x="0" y="10" z="0" w="1" />
+            <ambient r="0.1" g="0.1" b="0.1" a="0.1" />
+            <diffuse r="1" g="1" b="1" a="1.0" />
+            <specular r="1" g="1" b="1" a="1.0" />
+        </light>
+
+    </lights>
+
+
+    <textures>
+        <texture id="vaseTex" path="vase.jpg" /> <!-- Créditos de textura para o grupo 8 da turma 7-->
+    </textures>
+    <spritesheets>
+        <spritesheet id="dance" path="dance.png" sizeM="8" sizeN="10" />
+    </spritesheets>
+
+    <materials>
+        <material id="testMaterial">
+            <shininess value="5" />
+            <ambient r="0.2" g="0.2" b="0.2" a="0.5" />
+            <diffuse r="1" g="1" b="1" a="1.0" />
+            <specular r="1" g="1" b="1" a="1.0" />
+            <emissive r="0.0" g="0.0" b="0.0" a="1.0" />
+        </material>
+    </materials>
+    <animations>
+        <animation id="bookInShelf" >
+            <keyframe instant="0">
+                <translation x="0" y="0" z="0" />
+                <rotation axis="x" angle="0" />
+                <rotation axis="y" angle="0" />
+                <rotation axis="z" angle="0" />
+                <scale sx="1" sy="1" sz="1" />
+            </keyframe>
+            <keyframe instant="4">
+                <translation x="0" y="1.03" z="0" />
+                <rotation axis="x" angle="0" />
+                <rotation axis="y" angle="0" />
+                <rotation axis="z" angle="-90" />
+                <scale sx="1" sy="1" sz="1" />
+            </keyframe>
+            <keyframe instant="10">
+                <translation x="3.5" y="1.03" z="0" />
+                <rotation axis="x" angle="0" />
+                <rotation axis="y" angle="0" />
+                <rotation axis="z" angle="-90" />
+                <scale sx="1" sy="1" sz="1" />
+            </keyframe>
+            <keyframe instant="15">
+                <translation x="3.5" y="1.03" z="-4.4" />
+                <rotation axis="x" angle="0" />
+                <rotation axis="y" angle="0" />
+                <rotation axis="z" angle="-90" />
+                <scale sx="1" sy="1" sz="1" />
+            </keyframe>
+            
+            
+        </animation>
+    </animations>
+    
+    <nodes>
+        <node id="Root">
+            <material id="null" />
+
+            <texture id="clear">
+                <amplification afs="1.0" aft="1.0" />
+            </texture>
+
+            <transformations></transformations>
+            <descendants>
+                <leaf type="board" x="0" y="0" z="0" columns="6" rows="6" />
+            </descendants>
+        </node>
+        <node id="board">
+            <material id="null" />
+
+            <texture id="clear">
+                <amplification afs="1.0" aft="1.0" />
+            </texture>
+
+            <transformations>
+                <translation x="-2.5" y="0" z="-2.5"/>
+                <scale sx="0.5" sy="0.5" sz="0.5"/>
+            </transformations>
+            <descendants>
+                <leaf type="board" x="0" y="0" z="0" columns="6" rows="6" />
+            </descendants>
+        </node>
+    </nodes>
+
+
+</lsf>
